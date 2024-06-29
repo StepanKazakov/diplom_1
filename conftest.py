@@ -1,11 +1,7 @@
 import pytest
-from bun import Bun
-from ingredient import Ingredient
+from praktikum.database import Database
+
 
 @pytest.fixture
-def mock_bun():
-    return Bun("Sesame", 1.5)
-
-@pytest.fixture
-def mock_ingredient():
-    return Ingredient("Lettuce", 0.5)
+def database():
+    return Database()
