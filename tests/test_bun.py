@@ -1,8 +1,24 @@
-class TestBun:
-    def test_bun_get_name(self, database):
-        bun = database.available_buns()[0]
-        assert bun.get_name() == "black bun"
+import pytest
+from praktikum.database import Database
 
-    def test_bun_get_price(self, database):
-        bun = database.available_buns()[1]
-        assert bun.get_price() == 200
+
+class TestBun:
+    def setup_method(self):
+        self.database = Database()
+        self.buns = self.database.available_buns()
+
+    @pytest.mark.parametrize("bun_index, expected_name", [
+        (0, "black bun"),
+        (1, "white bun"),
+        (2, "red bun")
+    ])
+    def test_bun_get_name(self, bun_index, expected_name):
+        assert self.buns[bun_index].get_name() == expected_name
+
+    @pytest.mark.parametrize("bun_index, expected_price", [
+        (0, 100),
+        (1, 200),
+        (2, 300)
+    ])
+    def test_bun_get_price(self, bun_index, expected_price):
+        assert self.buns[bun_index].get_price() == expected_price

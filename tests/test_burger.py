@@ -1,70 +1,62 @@
-import pytest
-from unittest.mock import Mock
-from praktikum.bun import Bun
-from praktikum.ingredient import Ingredient
 from praktikum.burger import Burger
 from praktikum.database import Database
 
 
-@pytest.fixture
-def mock_bun():
-    mock_bun = Mock(spec=Bun)
-    mock_bun.get_price.return_value = 1.5
-    mock_bun.get_name.return_value = "Sesame Bun"
-    return mock_bun
-
-
-@pytest.fixture
-def mock_ingredient():
-    mock_ingredient = Mock(spec=Ingredient)
-    mock_ingredient.get_price.return_value = 0.5
-    mock_ingredient.get_name.return_value = "Lettuce"
-    mock_ingredient.get_type.return_value = "FILLING"
-    return mock_ingredient
-
-
-@pytest.fixture
-def mock_burger(mock_bun, mock_ingredient):
-    burger = Burger()
-    burger.set_buns(mock_bun)
-    burger.add_ingredient(mock_ingredient)
-    return burger
-
-
 class TestBurger:
-    def test_set_buns(self, mock_burger, mock_bun):
-        mock_burger.set_buns(mock_bun)
-        assert mock_burger.bun == mock_bun
+    def setup_method(self):
+        self.burger = Burger()
+        self.database = Database()
 
-    def test_add_ingredient(self, mock_burger, mock_ingredient):
-        mock_burger.add_ingredient(mock_ingredient)
-        assert mock_ingredient in mock_burger.ingredients
+    def test_set_buns(self):
+        buns = self.database.available_buns()
+        self.burger.set_buns(buns[0])
+        assert self.burger.bun == buns[0]
 
-    def test_remove_ingredient(self, mock_burger, mock_ingredient):
-        mock_burger.add_ingredient(mock_ingredient)
-        mock_burger.remove_ingredient(0)
-        assert mock_ingredient not in mock_burger.ingredients
+    def test_add_ingredient(self):
+        ingredients = self.database.available_ingredients()
+        self.burger.add_ingredient(ingredients[1])
+        self.burger.add_ingredient(ingredients[3])
+        self.burger.add_ingredient(ingredients[2])
+        assert self.burger.ingredients == [ingredients[1], ingredients[3], ingredients[2]]
 
-    def test_move_ingredient(self, mock_burger, mock_ingredient):
-        another_mock_ingredient = Mock(spec=Ingredient)
-        mock_burger.add_ingredient(mock_ingredient)
-        mock_burger.add_ingredient(another_mock_ingredient)
-        mock_burger.move_ingredient(0, 1)
-        assert mock_burger.ingredients[1] == mock_ingredient
+    def test_remove_ingredient(self):
+        ingredients = self.database.available_ingredients()
+        self.burger.add_ingredient(ingredients[4])
+        self.burger.add_ingredient(ingredients[3])
+        self.burger.add_ingredient(ingredients[2])
+        self.burger.remove_ingredient(1)
+        assert ingredients[3] not in self.burger.ingredients
 
-    def test_get_price(self, mock_burger, mock_bun, mock_ingredient):
-        mock_burger.set_buns(mock_bun)
-        mock_burger.add_ingredient(mock_ingredient)
-        assert mock_burger.get_price() == 3.5  # 1.5 * 2 (buns) + 0.5 (ingredient)
+    def test_move_ingredient(self):
+        ingredients = self.database.available_ingredients()
+        self.burger.add_ingredient(ingredients[0])
+        self.burger.add_ingredient(ingredients[2])
+        self.burger.add_ingredient(ingredients[5])
+        self.burger.move_ingredient(1, 2)
+        assert self.burger.ingredients[1] == ingredients[5]
+        assert self.burger.ingredients[2] == ingredients[2]
 
-    def test_get_receipt(self, mock_burger, mock_bun, mock_ingredient):
-        mock_burger.set_buns(mock_bun)
-        mock_burger.add_ingredient(mock_ingredient)
-        receipt = mock_burger.get_receipt()
+    def test_get_price(self):
+        buns = self.database.available_buns()
+        ingredients = self.database.available_ingredients()
+        self.burger.set_buns(buns[1])
+        self.burger.add_ingredient(ingredients[2])
+        self.burger.add_ingredient(ingredients[4])
+        self.burger.add_ingredient(ingredients[0])
+        assert self.burger.get_price() == 1000
+
+    def test_get_receipt(self):
+        buns = self.database.available_buns()
+        ingredients = self.database.available_ingredients()
+        self.burger.set_buns(buns[2])
+        self.burger.add_ingredient(ingredients[3])
+        self.burger.add_ingredient(ingredients[1])
         expected_receipt = (
-            "(==== Sesame Bun ====)\n"
-            "= filling Lettuce =\n"
-            "(==== Sesame Bun ====)\n"
-            "Price: 3.5"
+            "(==== red bun ====)\n"
+            "= filling cutlet =\n"
+            "= sauce sour cream =\n"
+            "(==== red bun ====)\n"
+            "\n"
+            "Price: 900"
         )
-        assert receipt == expected_receipt
+        assert self.burger.get_receipt() == expected_receipt
